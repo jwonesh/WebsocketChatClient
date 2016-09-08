@@ -25,15 +25,14 @@
     <span class="close" ng-click="vm.data.showRegisterModal = false">x</span>
 	<div>
 		<label style="width: 20%;">Username</label>
-		<input type="text" id="login" ng-model="vm.data.register.username" ng-keyup="$event.keyCode == 13 && vm.events.login()">
+		<input type="text" id="login" ng-model="vm.data.register.username">
 	</div>
 	<div>
 		<label style="width: 20%;">Password</label>
-		<input type="password" id="password" ng-model="vm.data.register.password" ng-keyup="$event.keyCode == 13 && !!vm.data.register.username && !!vm.data.register.password && vm.events.login()">
+		<input type="password" id="password" ng-model="vm.data.register.password">
 	</div>
 	<div style="margin-top: 10px;">
-		<button ng-click="vm.events.register()">Register</button>
-		<button style="float: right;" ng-disabled="!!vm.data.registerInProgress" ng-click="vm.data.showRegisterModal = true"></button>
+		<button ng-click="vm.events.register()" ng-disabled="!!vm.data.registerInProgress" >Register</button>
 	</div>
   </div>
 

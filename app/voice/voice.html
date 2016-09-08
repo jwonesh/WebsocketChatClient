@@ -1,1 +1,27 @@
-<div>Voice view</div>
+<span style="float: left;">Voice Chat Rooms</span>
+<span style="float: right;">
+	<button ng-click="vm.data.showCreateChatRoomModal = true">Create Chat Room</button>
+</span>
+<div style="clear: both;"></div>
+<div style="border: 1px solid grey; margin-top: 10px;">
+	<div ng-repeat="room in vm.data.voiceWrapper.chatRooms">
+		{{room.name}}
+	</div>
+</div>
+
+
+<div id="createChatRoomModal" class="modal" ng-if="!!vm.data.showCreateChatRoomModal">
+
+  <!-- Modal content -->
+  <div class="modal-content">
+    <span class="close" ng-click="vm.data.showCreateChatRoomModal = false">x</span>
+	<div>
+		<label style="width: 20%;">Room Name</label>
+		<input type="text" id="login" ng-model="vm.data.chatRoomName" ng-keyup="$event.keyCode == 13 && vm.events.login()">
+	</div>
+	<div style="margin-top: 10px;">
+		<button ng-click="vm.events.createVoiceChatRoom(vm.data.chatRoomName)" ng-disabled="vm.events.chatRoomCreationInProgress === true">Create</button>
+	</div>
+  </div>
+
+</div>

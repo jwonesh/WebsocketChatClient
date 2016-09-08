@@ -2,7 +2,7 @@
 
 angular.module('myApp')
 
-.factory('WebsocketService', ['$q', 'UserService', '$rootScope', '$location', function($q, UserService, $rootScope, $location) {
+.factory('WebsocketService', ['$q', 'UserService', '$rootScope', '$location', 'VoiceService', function($q, UserService, $rootScope, $location, VoiceService) {
 	var service = {};
 	var currentCallbackId = 0;
 	var callbacks = {};
@@ -138,6 +138,15 @@ angular.module('myApp')
 		return defer(data, "REGISTER");
 	};
 
+	service.createVoiceChatRoom = function(name){
+		var data = {name: name, owner: UserService.getUserWrapper().user.username};
+		return defer(data, "CREATE_VOICE_CHAT_ROOM");
+	};
+
+	service.getVoiceChatRooms = function(){
+		return defer({}, "GET_VOICE_CHAT_ROOMS");
+	};
+
 	var actions = {};
 
 	var doUserLoggedInCb = function(data){
@@ -265,11 +274,22 @@ angular.module('myApp')
 		}
 	};
 
+	var voiceChatRoomCreated = function(data){
+		var chatRooms = VoiceService.getVoiceWrapper().chatRooms;
+
+		chatRooms.push(data);
+
+		if(!$rootScope.$$phase) {
+			$rootScope.$apply();
+		}
+	};
+
 	actions["USER_LOGGED_IN"] = doUserLoggedInCb;
 	actions["USER_LOGGED_OUT"] = doUserLoggedOutCb;
 	actions["FORCE_LOGOUT"] = forceLogout;
 	actions["RECEIVE_MESSAGE"] = receiveMessage;
 	actions["ADD_USER_TO_CONVERSATION"] = addUserToConversation;
+	actions["VOICE_CHAT_ROOM_CREATED"] = voiceChatRoomCreated;
 
 
 
