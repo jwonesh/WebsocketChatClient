@@ -16,6 +16,8 @@ angular.module('myApp.view1', ['ngRoute', 'myApp', 'ngCookies'])
 	vm.data.loggedInUsersWrapper = {};
 	vm.data.loggedInUsersWrapper.users = [];
 
+	vm.data.register = {};
+
 	vm.data.userinfo = {};
 
 	vm.events = {};
@@ -28,19 +30,26 @@ angular.module('myApp.view1', ['ngRoute', 'myApp', 'ngCookies'])
 				vm.errors.loginError = true;
 			} else{
 				//go to main view
-				//write cookie
-				var cookie = response.headers[0];
-				val = cookie.split(';');
-				val.splice(0, 1);
-				var val = val.join(";");
-				console.log("val = " + val);
-				$cookies.put(cookie.split(';')[0].split('=')[0], cookie.split(';')[0].split('=')[1]);
 				UserService.clearUserWrapper();
 				UserService.getUserWrapper().user = {username: vm.data.userinfo.username}
 				$location.path("/view2");
 			}
 		}, function(error){
 			console.log("call error");
+		});
+	};
+
+	vm.events.register = function(){
+		vm.data.registerComplete = false;
+		WebsocketService.register(vm.data.register.username, vm.data.register.password).then(function(response){
+			vm.data.registerComplete = true;
+			vm.data.showRegisterModal = false;
+			if (response.error > 0){
+				vm.errors.registerError = true;
+			}
+		}, function(response){
+			vm.errors.registerError = true;
+			vm.data.registerComplete = true;
 		});
 	};
 
