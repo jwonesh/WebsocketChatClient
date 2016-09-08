@@ -14,7 +14,7 @@ angular.module('myApp')
 	var ws = null;
 
 	var initWs = function(){
-		ws = new WebSocket("ws://localhost:8001");
+		ws = new WebSocket("ws://10.10.11.135:8001");
 		ws.onopen = function(){
 			if (!!readyWrapper.defer){
 				readyWrapper.defer.resolve();
@@ -118,21 +118,68 @@ angular.module('myApp')
 		return defer({}, "GET_LOGGED_IN_USERS");
 	};
 
-	service.sendMessage = function(username, message){
-		var data = {username: username, message: message};
+	service.sendMessage = function(username, message, cid){
+		var data = {username: username, message: message, cid: cid};
 		return defer(data, "SEND_MESSAGE");
+	};
+
+	service.createConversation = function(participants){
+		var data = {participants: participants};
+		return defer(data, "CREATE_CONVERSATION");
+	};
+
+	service.addUserToConversation = function(username, conversation, from){
+		var data = {username: username, cid: conversation.id, from: from};
+		return defer(data, "ADD_USER_TO_CONVERSATION");
+	};
+
+	service.register = function(username, password){
+		var data = {username: username, password: password};
+		return defer(data, "REGISTER");
 	};
 
 	var actions = {};
 
 	var doUserLoggedInCb = function(data){
-		UserService.getUserWrapper().loggedInUsers.push(data);
+		var convo = null;
+		var participant = null;
+		for (var i = 0; i < UserService.getUserWrapper().conversations.length; i++){
+			convo = UserService.getUserWrapper().conversations[i];
+			for (var j = 0; j < convo.participants.length; j++){
+				participant = convo.participants[j];
+				if (participant === data.username){
+					convo.history.push({from: "", message: data.username + " reconnected to the conversation."});
+					break;
+				}
+				
+			}
+		}
+
+		if (UserService.getUserWrapper().loggedInUsers.indexOf(data.username) === -1){
+			UserService.getUserWrapper().loggedInUsers.push(data);
+		}
+
 		if(!$rootScope.$$phase) {
 			$rootScope.$apply()
 		}
 	};
 
 	var doUserLoggedOutCb = function(data){
+		//notify conversations
+		var convo = null;
+		var participant = null;
+		for (var i = 0; i < UserService.getUserWrapper().conversations.length; i++){
+			convo = UserService.getUserWrapper().conversations[i];
+			for (var j = 0; j < convo.participants.length; j++){
+				participant = convo.participants[j];
+				if (participant === data.username){
+					convo.history.push({from: "", message: data.username + " disconnected from the conversation."});
+					break;
+				}
+				
+			}
+		}
+
 		var users = UserService.getUserWrapper().loggedInUsers;
 		users.splice(users.indexOf(data.username), 1);
 		if(!$rootScope.$$phase) {
@@ -152,7 +199,7 @@ angular.module('myApp')
 		var convos = UserService.getUserWrapper().conversations;
 		var found = false;
 		for (var i = 0; i < UserService.getUserWrapper().conversations.length; i++){
-			if (UserService.getUserWrapper().conversations[i].username === from){
+			if (UserService.getUserWrapper().conversations[i].id === d.cid){
 				UserService.getUserWrapper().conversations[i].history.push(data);
 				found = true;
 				break;
@@ -165,6 +212,7 @@ angular.module('myApp')
 			newConvo.history = [];
 			newConvo.participants = d.participants;
 			newConvo.isGroupChat = d.isGroupChat;
+			newConvo.id = d.cid;
 			newConvo.history.push(data);
 			UserService.getUserWrapper().conversations.push(newConvo);
 		}
@@ -175,10 +223,53 @@ angular.module('myApp')
 
 	};
 
+	var addUserToConversation = function(data){
+		var foundConvo = null;
+		for (var i = 0; i < UserService.getUserWrapper().conversations.length; i++){
+			if (UserService.getUserWrapper().conversations[i].id === data.cid){
+				foundConvo = UserService.getUserWrapper().conversations[i];
+				break;
+			}
+		}
+
+		if (!!foundConvo){
+			//being created on already participating users client
+			var filteredUserList = [];
+			for (var i = 0; i < data.participants.length; i++){
+				if (data.participants[i] !== UserService.getUserWrapper().user.username){
+					filteredUserList.push(data.participants[i]);
+				}
+			}
+			foundConvo.participants = filteredUserList;
+			foundConvo.history.push({from: "", message: data.addedUser + " has been added to the conversation by " + data.addedBy});
+		} else{
+			//being created on new user client
+			var newConvo = {};
+			newConvo.username = data.from;
+			newConvo.history = [];
+			var filteredUserList = [];
+			for (var i = 0; i < data.participants.length; i++){
+				if (data.participants[i] !== UserService.getUserWrapper().user.username){
+					filteredUserList.push(data.participants[i]);
+				}
+			}
+			newConvo.participants = filteredUserList;
+			newConvo.isGroupChat = true;
+			newConvo.id = data.cid;
+			UserService.getUserWrapper().conversations.push(newConvo);
+		}
+
+
+		if(!$rootScope.$$phase) {
+			$rootScope.$apply();
+		}
+	};
+
 	actions["USER_LOGGED_IN"] = doUserLoggedInCb;
 	actions["USER_LOGGED_OUT"] = doUserLoggedOutCb;
 	actions["FORCE_LOGOUT"] = forceLogout;
 	actions["RECEIVE_MESSAGE"] = receiveMessage;
+	actions["ADD_USER_TO_CONVERSATION"] = addUserToConversation;
 
 
 

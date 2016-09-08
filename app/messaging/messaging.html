@@ -1,0 +1,60 @@
+<div style="margin-left: 10px; margin-top: 10px;">
+			<div>Online Users</div>
+			<div class="displaybox usersContainer">
+				<div ng-repeat="user in vm.data.userWrapper.loggedInUsers">
+					<a ng-click="vm.events.startChat(user)">{{user.username}}</a>
+				</div>
+			</div>
+			<div>
+				<div>Conversations</div>
+				<div>
+					<div style="min-height: 100px;">
+						<div class="participantsContainer" class="displaybox">
+							<div ng-repeat="conversation in vm.data.userWrapper.conversations" style="padding-bottom: 3px; border-bottom: 1px solid black; padding-top: 3px; padding-left: 3px; float: left; width: 100%;" ng-click="vm.events.selectConversation(conversation)"
+								ng-class="{'bg-lightblue': conversation.id === vm.data.selectedConversationWrapper.conversation.id}">
+								<span style="z-index: 1;">{{vm.data.getParticipants(conversation.participants)}}</span>
+								<span style="float: right; margin-right: 5px; z-index: 2;" ng-click="vm.events.addUser(conversation)">+</span>
+							</div>
+							
+							<div ng-if="vm.data.userWrapper.conversations.length === 0">&nbsp;</div>
+						</div>
+						<div class="hideOnDesktop">Messages</div>
+						<div class="messagesContainer" scroll-bottom="vm.data.selectedConversationWrapper.conversation.history" class="displaybox">
+							<div style="margin-left: 5px; margin-top: 1px; margin-bottom: 1px;" ng-repeat="message in vm.data.selectedConversationWrapper.conversation.history" ng-class="{'systemMessage': message.from === ''}">{{vm.display.formatMessageText(message)}}</div>	
+						</div>
+						<div style="clear: both;"></div>
+					</div>
+					<textarea ng-model="vm.data.chatTo" ng-keyup="$event.keyCode == 13 && vm.events.submitMessage()" class="displaybox chatContainer" placeholder="Type a message"></textarea>
+					<br>
+				</div>
+				<button style="margin-topL 5px;" ng-click="vm.events.submitMessage()">Submit</button>	
+			</div>
+			<!-- <div ng-if="!!vm.data.selectedUser">
+				<div>Chating with {{vm.data.selectedUser.username}}</div>
+				<div>Conversation</div>
+				<textarea ng-disabled="true" readonly ng-model="vm.data.chatFrom"></textarea>
+				<br>
+				<div>Type Something...</div>
+				<textarea ng-model="vm.data.chatTo"></textarea>
+				<br>
+				<button ng-click="vm.events.submitMessage(vm.data.selectedUser)" ng-disabled="!vm.data.sendEnabled">Submit</button>	
+			</div> -->
+
+		<!-- The Modal -->
+		<div id="myModal" class="modal" ng-if="!!vm.data.showAddUserModal">
+
+		  <!-- Modal content -->
+		  <div class="modal-content">
+		    <span class="close" ng-click="vm.data.showAddUserModal = false">x</span>
+		    <div>Choose a user to add:</div>
+		    <br>
+		    <div style="border: 1px solid black; margin: 5px;" class="displaybox">
+		    	<div style="margin-top: 3px; margin-left: 3px;" ng-repeat="user in vm.data.conversationCandidateList" ng-class="{'bg-lightblue': user.username === vm.data.userToAdd}" ng-click="vm.data.userToAdd = user.username">
+		    		{{user.username}}
+		    	</div>
+		    </div>
+		    <br>
+		    <button ng-click="vm.events.addUserToConversation(vm.data.userToAdd)">Submit</button>
+		  </div>
+		</div>
+</div>
