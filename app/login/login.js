@@ -1,15 +1,15 @@
 'use strict';
 
-angular.module('myApp.view1', ['ngRoute', 'myApp', 'ngCookies'])
+angular.module('myApp.login', ['ngRoute', 'myApp', 'ngCookies'])
 
 .config(['$routeProvider', function($routeProvider) {
-  $routeProvider.when('/view1', {
-    templateUrl: 'view1/view1.html',
-    controller: 'View1Ctrl'
+  $routeProvider.when('/login', {
+    templateUrl: 'login/login.html',
+    controller: 'LoginCtrl'
   });
 }])
 
-.controller('View1Ctrl', ['$scope', 'WebsocketService', '$location', 'UserService', '$cookies', function($scope, WebsocketService, $location, UserService, $cookies) {
+.controller('LoginCtrl', ['$scope', 'WebsocketService', '$location', 'UserService', '$cookies', function($scope, WebsocketService, $location, UserService, $cookies) {
 	var vm = this;
 
 	vm.data = {};
@@ -32,7 +32,7 @@ angular.module('myApp.view1', ['ngRoute', 'myApp', 'ngCookies'])
 				//go to main view
 				UserService.clearUserWrapper();
 				UserService.getUserWrapper().user = {username: vm.data.userinfo.username}
-				$location.path("/view2");
+				$location.path("/main");
 			}
 		}, function(error){
 			console.log("call error");
@@ -52,8 +52,6 @@ angular.module('myApp.view1', ['ngRoute', 'myApp', 'ngCookies'])
 			vm.data.registerComplete = true;
 		});
 	};
-
-	console.log("View1 Ctrl created.");
 
 	$scope.vm = vm;
 

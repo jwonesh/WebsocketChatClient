@@ -1,0 +1,11 @@
+<div style="margin-left: 10px; margin-right: 10px;">
+	<div>Welcome, {{vm.data.userWrapper.user.username}}</div>
+	<div style="margin-top: 10px;">
+		<span style="border: 1px solid grey; height: 25px; padding: 5px;" ng-class="{'bg-lightblue': vm.tabs.selected === 0}" ng-click="vm.tabs.selected = 0">Messaging</span>
+		<span style="border: 1px solid grey; height: 25px; padding: 5px;" ng-class="{'bg-lightblue': vm.tabs.selected === 1}" ng-click="vm.tabs.selected = 1">Voice</span>
+		<div class="mainContainer">
+			<messaging ng-if="vm.tabs.selected === 0"></messaging>
+			<voice ng-if="vm.tabs.selected === 1"></voice>
+		</div>
+	</div>
+</div>
