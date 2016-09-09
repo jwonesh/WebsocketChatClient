@@ -147,6 +147,10 @@ angular.module('myApp')
 		return defer({}, "GET_VOICE_CHAT_ROOMS");
 	};
 
+	service.connectToVoiceChatRoom = function(name){
+		return defer({name: name}, "CONNECT_TO_VOICE_CHAT_ROOM");
+	};
+
 	var actions = {};
 
 	var doUserLoggedInCb = function(data){
@@ -161,6 +165,29 @@ angular.module('myApp')
 					break;
 				}
 				
+			}
+		}
+
+		for (var k in VoiceService.getVoiceWrapper().chatRooms){
+			var room = VoiceService.getVoiceWrapper().chatRooms[k];
+			if (room.name.toLowerCase() === 'lobby'){
+				var userInLobbyAlready = false;
+				for (var l = 0; l < room.participants.length; l++){
+					if (room.participants[l] === data.username){
+						userInLobbyAlready = true;
+						break;
+					}
+				}
+
+				if (!userInLobbyAlready){
+					room.participants.push(data.username);
+				}
+			} else{
+				for (var m = 0; m < room.participants.length; m++){
+					if (room.participants[m] === data.username){
+						room.participants.splice(m, 1);
+					}
+				}
 			}
 		}
 
@@ -186,6 +213,16 @@ angular.module('myApp')
 					break;
 				}
 				
+			}
+		}
+
+		for (var k in VoiceService.getVoiceWrapper().chatRooms){
+			var room = VoiceService.getVoiceWrapper().chatRooms[k];
+			for (var j = 0; j < room.participants.length; j++){
+				if (room.participants[j] === data.username){
+					room.participants.splice(j, 1);
+					break;
+				}
 			}
 		}
 
@@ -277,7 +314,31 @@ angular.module('myApp')
 	var voiceChatRoomCreated = function(data){
 		var chatRooms = VoiceService.getVoiceWrapper().chatRooms;
 
-		chatRooms.push(data);
+		chatRooms[data.name.toLowerCase()] = data;
+
+		if(!$rootScope.$$phase) {
+			$rootScope.$apply();
+		}
+	};
+
+	var userConnectedToChatRoom = function(data){
+		var chatRooms = VoiceService.getVoiceWrapper().chatRooms;
+
+		var participants = null;
+		for (var k in chatRooms){
+			participants = chatRooms[k].participants;
+
+			if (k !== data.name){
+				for (var i = 0; i < participants.length; i++){
+					if (participants[i] === data.username){
+						participants.splice(i, 1);
+						break;
+					}
+				}
+			} else{
+				participants.push(data.username);
+			}
+		}
 
 		if(!$rootScope.$$phase) {
 			$rootScope.$apply();
@@ -290,6 +351,7 @@ angular.module('myApp')
 	actions["RECEIVE_MESSAGE"] = receiveMessage;
 	actions["ADD_USER_TO_CONVERSATION"] = addUserToConversation;
 	actions["VOICE_CHAT_ROOM_CREATED"] = voiceChatRoomCreated;
+	actions["CONNECT_TO_VOICE_CHAT_ROOM"] = userConnectedToChatRoom;
 
 
 

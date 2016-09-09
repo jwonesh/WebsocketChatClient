@@ -3,9 +3,12 @@
 	<button ng-click="vm.data.showCreateChatRoomModal = true">Create Chat Room</button>
 </span>
 <div style="clear: both;"></div>
-<div style="border: 1px solid grey; margin-top: 10px;">
-	<div ng-repeat="room in vm.data.voiceWrapper.chatRooms">
-		{{room.name}}
+<div style="border: 1px solid grey; margin-top: 10px;" class="displaybox">
+	<div ng-repeat="room in vm.data.voiceWrapper.chatRooms" style="margin-left: 10px; ">
+		<div style="background-color: #e6f3ff; margin-bottom: 2px;" ng-click="vm.events.connectToRoom(room.name)">{{room.name}}</div>
+		<div ng-repeat="participant in room.participants" style="margin-left: 20px;">
+			{{participant}}
+		</div>
 	</div>
 </div>
 
