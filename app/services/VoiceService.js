@@ -10,6 +10,7 @@ angular.module('myApp')
 
 	var voiceWrapper = {};
 	voiceWrapper.chatRooms = [];
+	voiceWrapper.audioBuffer = null;
 
 	function getVoiceWrapper(){
 		return voiceWrapper;

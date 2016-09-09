@@ -14,7 +14,9 @@ angular.module('myApp')
 	var ws = null;
 
 	var initWs = function(){
+		//ws = new WebSocket("ws://10.10.11.135:8001");
 		ws = new WebSocket("ws://10.10.11.135:8001");
+		ws.binaryType = "arraybuffer";
 		ws.onopen = function(){
 			if (!!readyWrapper.defer){
 				readyWrapper.defer.resolve();
@@ -24,8 +26,13 @@ angular.module('myApp')
 		};
 
 		ws.onmessage =  function(response){
-			console.log("Received message: " + JSON.stringify(response.data));
-			resolveCallback(response);
+			if(response.data instanceof ArrayBuffer){
+				console.log("received binary data!");
+				handleBinaryData(response.data);
+			} else{
+				console.log("Received message: " + JSON.stringify(response.data));
+				resolveCallback(response);
+			}
 		};
 
 		ws.onerror = function(error){
@@ -35,6 +42,20 @@ angular.module('myApp')
 	};
 
 	initWs();
+
+	function handleBinaryData(data){
+		if (!!VoiceService.getVoiceWrapper().audioBuffer){
+			var newArr = new Float32Array(data);
+			//VoiceService.getVoiceWrapper().audioBuffer.copyToChannel(Float32Array.from(data), 0);
+			//for (var channel = 0; channel < channels; channel++) {
+		   // This gives us the actual ArrayBuffer that contains the data
+		   var nowBuffering = VoiceService.getVoiceWrapper().audioBuffer.getChannelData(0);
+		   for (var i = 0; i < VoiceService.getVoiceWrapper().buff_size; i++) {
+		     	nowBuffering[i] = newArr[i];
+		   }
+		  }
+		
+	}
 
 	var defaultReceiveCallback = {
 		resolve: function(response){
@@ -100,6 +121,10 @@ angular.module('myApp')
     		defer.reject();
     	}
     	return defer.promise;
+	};
+
+	service.sendVoiceChunk = function(buffer){
+		ws.send(buffer);
 	};
 
 	//angular service calls
