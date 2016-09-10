@@ -33,13 +33,15 @@ var webaudio_tooling_obj = function () {
 
     console.log("audio is starting up ...");
 
-    //16KB chunks
-    var BUFF_SIZE_RENDERER = 16384;
+    //4KB chunks
+    //refactor into global variable
+    var BUFF_SIZE_RENDERER = voiceWrapper.BUFF_SIZE_RENDERER;
 
     var audioInput = null,
     microphone_stream = null,
     gain_node = null,
     script_processor_node = null;
+    var bufferHeuristic = voiceWrapper.bufferHeuristic;
 
     if (!navigator.getUserMedia)
         navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia ||
@@ -64,42 +66,34 @@ var webaudio_tooling_obj = function () {
 
     };
 
+    var microphone_output_buffer;
+    var c = new OfflineAudioContext(1, BUFF_SIZE_RENDERER, 48000);
+    var b = null;
+    var s = c.createBufferSource();
+    b = c.createBuffer(1, BUFF_SIZE_RENDERER, audioContext.sampleRate);
+    s.buffer = b;
+    s.start();
+
     var process_microphone_buffer = function(event) {
 
-        var microphone_output_buffer;
-
+        
         microphone_output_buffer = event.inputBuffer.getChannelData(0); // just mono - 1 channel for now
         WebsocketService.sendVoiceChunk(microphone_output_buffer);
+
+            
+
+            //b.copyToChannel(microphone_output_buffer, 0);
+
+
+
+            //c.startRendering().then(function (result) {
+            //    WebsocketService.sendVoiceChunk(result.getChannelData(0));
+            //});
     };
 
     function start_speakers(stream){
-    	var channels = 1;
-		// Create an empty two second stereo buffer at the
-		// sample rate of the AudioContext
-		var frameCount = audioContext.sampleRate;
-		var node = audioContext.createGain(BUFF_SIZE_RENDERER, 1, 1);
-    	var myArrayBuffer = audioContext.createBuffer(1, 1 * BUFF_SIZE_RENDERER, audioContext.sampleRate);
-
-
-    	var source = audioContext.createBufferSource();
-    	source.buffer = myArrayBuffer;
-    	source.connect(audioContext.destination);
-    	source.loop = true;
-		source.start(0);
-
-		//for (var channel = 0; channel < channels; channel++) {
-		   // This gives us the actual ArrayBuffer that contains the data
-		   //var nowBuffering = myArrayBuffer.getChannelData(channel);
-		   //for (var i = 0; i < frameCount; i++) {
-		     // Math.random() is in [0; 1.0]
-		     // audio needs to be in [-1.0; 1.0]
-		   //  nowBuffering[i] = Math.random() * 2 - 1;
-		  // }
-		 // }
-
-		voiceWrapper.audioBuffer = myArrayBuffer;
-		voiceWrapper.source = source;
-		voiceWrapper.buff_size = BUFF_SIZE_RENDERER;
+        voiceWrapper.frameCount = audioContext.sampleRate;
+        voiceWrapper.audioContext = audioContext;
 		///////////
     }
 

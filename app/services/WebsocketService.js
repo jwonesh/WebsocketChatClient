@@ -7,15 +7,28 @@ angular.module('myApp')
 	var currentCallbackId = 0;
 	var callbacks = {};
 
+	var bufferHeuristic = VoiceService.getVoiceWrapper().bufferHeuristic;
+
 	var readyWrapper = {};
 
 	var NO_CONNECTION = -1;
 
 	var ws = null;
 
+	var buffers = [];
+	var buffRotator = -1;
+
+	var BUFF_SIZE_RENDERER = VoiceService.getVoiceWrapper().BUFF_SIZE_RENDERER;
+
+	var first = true;
+
+	var audioBuffer = new Float32Array(bufferHeuristic * BUFF_SIZE_RENDERER);
+
+
+
 	var initWs = function(){
 		//ws = new WebSocket("ws://10.10.11.135:8001");
-		ws = new WebSocket("ws://10.10.11.135:8001");
+		ws = new WebSocket("ws://192.168.1.132:8001");
 		ws.binaryType = "arraybuffer";
 		ws.onopen = function(){
 			if (!!readyWrapper.defer){
@@ -43,19 +56,53 @@ angular.module('myApp')
 
 	initWs();
 
+	var audioContext = new AudioContext();
+	var frameCount = audioContext.sampleRate;
+	//var c = new OfflineAudioContext(1, bufferHeuristic * BUFF_SIZE_RENDERER, frameCount);
+    var myArrayBuffer = audioContext.createBuffer(1, (bufferHeuristic * BUFF_SIZE_RENDERER), frameCount);
+
+	var source = null;
+	//var node = audioContext.createGain(1,1,0);
+
+	
+	
+
+	//var node = audioContext.createGain(BUFF_SIZE_RENDERER / 2, 1, 1);
+
+	//node.connect(audioContext.destination);
+
+	var buffToggle = -1;
+	var writingToAudio = false;
+	var ranOnce = false;
+
 	function handleBinaryData(data){
-		if (!!VoiceService.getVoiceWrapper().audioBuffer){
+			var buffRotatePos = ++buffRotator % bufferHeuristic;
+
 			var newArr = new Float32Array(data);
-			//VoiceService.getVoiceWrapper().audioBuffer.copyToChannel(Float32Array.from(data), 0);
-			//for (var channel = 0; channel < channels; channel++) {
-		   // This gives us the actual ArrayBuffer that contains the data
-		   var nowBuffering = VoiceService.getVoiceWrapper().audioBuffer.getChannelData(0);
-		   for (var i = 0; i < VoiceService.getVoiceWrapper().buff_size; i++) {
-		     	nowBuffering[i] = newArr[i];
-		   }
-		  }
+			//copy to super buffer
+			for (var i = 0; i < newArr.length; i++){
+				audioBuffer[(buffRotatePos * BUFF_SIZE_RENDERER) + i] = newArr[i];
+			}
+
+			if (buffRotatePos !== bufferHeuristic - 1){
+				return;
+			}
 		
-	}
+			source = audioContext.createBufferSource(1, (bufferHeuristic * BUFF_SIZE_RENDERER), frameCount);
+			source.buffer = myArrayBuffer;
+
+   			source.connect(audioContext.destination);
+
+   			var i = 0;
+   			var dest = myArrayBuffer.getChannelData(0);
+   			while (i < bufferHeuristic * BUFF_SIZE_RENDERER){
+   				dest[i] = audioBuffer[i ];
+   				i++;
+   			}
+
+   			source.start(0);
+		
+	};
 
 	var defaultReceiveCallback = {
 		resolve: function(response){
@@ -124,6 +171,12 @@ angular.module('myApp')
 	};
 
 	service.sendVoiceChunk = function(buffer){
+	//	buffers.push(buffer);
+	//	while (buffers.length >= bufferHeuristic){
+	//		ws.send(buffers[0]);
+	//		buffers.splice(0, 1);
+		//}
+
 		ws.send(buffer);
 	};
 
