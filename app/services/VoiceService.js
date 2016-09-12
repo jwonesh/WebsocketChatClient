@@ -11,8 +11,8 @@ angular.module('myApp')
 	var voiceWrapper = {};
 	voiceWrapper.chatRooms = [];
 	voiceWrapper.audioBuffer = null;
-	voiceWrapper.BUFF_SIZE_RENDERER = 2048;
-	voiceWrapper.bufferHeuristic = 8;
+	voiceWrapper.BUFF_SIZE_RENDERER = 4096;
+	voiceWrapper.bufferHeuristic = 32;
 
 
 	function getVoiceWrapper(){

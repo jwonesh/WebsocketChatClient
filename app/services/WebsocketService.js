@@ -24,11 +24,72 @@ angular.module('myApp')
 
 	var audioBuffer = new Float32Array(bufferHeuristic * BUFF_SIZE_RENDERER);
 
+	var bufferRing = [];
+
+	var audioContext = new AudioContext();
+	var frameCount = audioContext.sampleRate;
+	//var c = new OfflineAudioContext(1, bufferHeuristic * BUFF_SIZE_RENDERER, frameCount);
+    var myArrayBuffer = audioContext.createBuffer(1, (BUFF_SIZE_RENDERER * bufferHeuristic/8), frameCount);
+	var source = null;
+	var buffToggle = -1;
+	var writingToAudio = false;
+	var ranOnce = false;
+	var startPlayback = -1;
+	var bufferRingPosition = -1;
+	var bufferRingPlayPosition = 0;
+	var playbackStopped = false;
+
+	for (var i = 0; i < bufferHeuristic; i++){
+		bufferRing.push(createBufferNode(BUFF_SIZE_RENDERER, audioContext, frameCount));
+	}
+
+	var onPlayEnded = function(){
+		if (bufferRingPosition >= bufferHeuristic/8 - 1){
+			bufferRingPlayPosition = bufferRingPosition - (bufferHeuristic/8 - 1);
+		} else{
+			bufferRingPlayPosition = (bufferHeuristic/8 + bufferRingPosition - 1);
+		}
+		//if (!bufferRing[(bufferRingPlayPosition + 1) % bufferHeuristic].readyForConsumption === 1){
+			//var playbackStopped = true;
+		//	return;
+		//}
+		bufferRingPlayPosition = ++bufferRingPlayPosition % bufferHeuristic;
+		var node = bufferRing[bufferRingPlayPosition];
+		//if (node.readyForConsumption === 1){
+		node.readyData();
+		node.readyForConsumption = 0;
+		//TODO: only play if marked for consumption;
+		node.source.start(0);
+		//}
+
+	};
+
+
+	function createBufferNode(bufferSize, context, frameCount){
+		var node = {};
+		node.buffer = context.createBuffer(1, BUFF_SIZE_RENDERER, frameCount);
+		node.readyForConsumption = 0;
+		node.channel = 0;
+		node.source = null;
+
+		node.readyData = function(){
+			node.source = audioContext.createBufferSource(1, (BUFF_SIZE_RENDERER), frameCount);
+			node.source.buffer = node.buffer;
+			
+			node.source.connect(audioContext.destination);
+			node.source.onended = onPlayEnded;
+
+			node.readyForConsumption = 1;
+		};
+
+		return node;
+	};
+
 
 
 	var initWs = function(){
 		//ws = new WebSocket("ws://10.10.11.135:8001");
-		ws = new WebSocket("ws://192.168.1.132:8001");
+		ws = new WebSocket("ws://0.tcp.ngrok.io:18124");
 		ws.binaryType = "arraybuffer";
 		ws.onopen = function(){
 			if (!!readyWrapper.defer){
@@ -56,53 +117,49 @@ angular.module('myApp')
 
 	initWs();
 
-	var audioContext = new AudioContext();
-	var frameCount = audioContext.sampleRate;
-	//var c = new OfflineAudioContext(1, bufferHeuristic * BUFF_SIZE_RENDERER, frameCount);
-    var myArrayBuffer = audioContext.createBuffer(1, (bufferHeuristic * BUFF_SIZE_RENDERER), frameCount);
 
-	var source = null;
-	//var node = audioContext.createGain(1,1,0);
 
 	
-	
-
-	//var node = audioContext.createGain(BUFF_SIZE_RENDERER / 2, 1, 1);
-
-	//node.connect(audioContext.destination);
-
-	var buffToggle = -1;
-	var writingToAudio = false;
-	var ranOnce = false;
-
+	var configDone = false;
 	function handleBinaryData(data){
 			var buffRotatePos = ++buffRotator % bufferHeuristic;
 
 			var newArr = new Float32Array(data);
+			bufferRingPosition = ++bufferRingPosition % bufferHeuristic;
+			var node = bufferRing[bufferRingPosition];
 			//copy to super buffer
-			for (var i = 0; i < newArr.length; i++){
-				audioBuffer[(buffRotatePos * BUFF_SIZE_RENDERER) + i] = newArr[i];
+			//for (var i = 0; i < newArr.length; i++){
+				//audioBuffer[(buffRotatePos * BUFF_SIZE_RENDERER) + i] = newArr[i];
+
+			//	node.buffer.getChannelData(0)[i] = newArr[i];
+			//}
+
+			node.buffer.copyToChannel(newArr, 0);
+			//node.readyData();
+
+			if (bufferRingPosition === bufferHeuristic/8 - 1){
+				if (!ranOnce){
+					ranOnce = true;
+				}
 			}
 
-			if (buffRotatePos !== bufferHeuristic - 1){
+			if (configDone && playbackStopped){
+			}
+			else if ((!ranOnce || configDone)){
 				return;
 			}
+			
 		
-			source = audioContext.createBufferSource(1, (bufferHeuristic * BUFF_SIZE_RENDERER), frameCount);
-			source.buffer = myArrayBuffer;
+			source = audioContext.createBufferSource(1, (BUFF_SIZE_RENDERER), frameCount);
+			source.buffer = bufferRing[0].buffer;
 
    			source.connect(audioContext.destination);
-
-   			var i = 0;
-   			var dest = myArrayBuffer.getChannelData(0);
-   			while (i < bufferHeuristic * BUFF_SIZE_RENDERER){
-   				dest[i] = audioBuffer[i ];
-   				i++;
-   			}
-
+   			source.onended = onPlayEnded;
    			source.start(0);
+   			configDone = true;
 		
 	};
+
 
 	var defaultReceiveCallback = {
 		resolve: function(response){
