@@ -59,13 +59,13 @@ angular.module('myApp.voice', ['ngRoute'])
 
                         if (k !== name.toLowerCase()){
                             for (var i = 0; i < room.participants.length; i++){
-                                if (room.participants[i] === UserService.getUserWrapper().user.username){
+                                if (room.participants[i].username === UserService.getUserWrapper().user.username){
                                     room.participants.splice(i, 1);
                                     break;
                                 }
                             }
                         } else{
-                            room.participants.push(UserService.getUserWrapper().user.username);
+                            room.participants.push({username: UserService.getUserWrapper().user.username, peerId: UserService.getUserWrapper().user.peerId});
                         }
                     }
                     console.log("Connected to room.");

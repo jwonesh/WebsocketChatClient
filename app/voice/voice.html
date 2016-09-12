@@ -7,7 +7,7 @@
 	<div ng-repeat="room in vm.data.voiceWrapper.chatRooms" style="margin-left: 10px; ">
 		<div style="background-color: #e6f3ff; margin-bottom: 2px;" ng-click="vm.events.connectToRoom(room.name)">{{room.name}}</div>
 		<div ng-repeat="participant in room.participants" style="margin-left: 20px;">
-			{{participant}}
+			{{participant.username}}
 		</div>
 	</div>
 </div>

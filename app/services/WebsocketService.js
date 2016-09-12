@@ -88,8 +88,8 @@ angular.module('myApp')
 
 
 	var initWs = function(){
-		//ws = new WebSocket("ws://10.10.11.135:8001");
-		ws = new WebSocket("ws://0.tcp.ngrok.io:18124");
+		ws = new WebSocket("ws://10.10.11.83:8001");
+		//ws = new WebSocket("ws://0.tcp.ngrok.io:18124");
 		ws.binaryType = "arraybuffer";
 		ws.onopen = function(){
 			if (!!readyWrapper.defer){
@@ -239,8 +239,8 @@ angular.module('myApp')
 
 	//angular service calls
 
-	service.login = function(username, password){
-		var data = {username: username, password: password};
+	service.login = function(username, password, peerId){
+		var data = {username: username, password: password, peerId: peerId};
 		return defer(data, "LOGIN");
 	};
 
@@ -308,18 +308,18 @@ angular.module('myApp')
 			if (room.name.toLowerCase() === 'lobby'){
 				var userInLobbyAlready = false;
 				for (var l = 0; l < room.participants.length; l++){
-					if (room.participants[l] === data.username){
+					if (room.participants[l].username === data.username){
 						userInLobbyAlready = true;
 						break;
 					}
 				}
 
 				if (!userInLobbyAlready){
-					room.participants.push(data.username);
+					room.participants.push({username: data.username, peerId: data.peerId});
 				}
 			} else{
 				for (var m = 0; m < room.participants.length; m++){
-					if (room.participants[m] === data.username){
+					if (room.participants[m].username === data.username){
 						room.participants.splice(m, 1);
 					}
 				}
@@ -354,7 +354,7 @@ angular.module('myApp')
 		for (var k in VoiceService.getVoiceWrapper().chatRooms){
 			var room = VoiceService.getVoiceWrapper().chatRooms[k];
 			for (var j = 0; j < room.participants.length; j++){
-				if (room.participants[j] === data.username){
+				if (room.participants[j].username === data.username){
 					room.participants.splice(j, 1);
 					break;
 				}
@@ -465,13 +465,13 @@ angular.module('myApp')
 
 			if (k !== data.name){
 				for (var i = 0; i < participants.length; i++){
-					if (participants[i] === data.username){
+					if (participants[i].username === data.username){
 						participants.splice(i, 1);
 						break;
 					}
 				}
 			} else{
-				participants.push(data.username);
+				participants.push({username: data.username, peerId: data.peerId});
 			}
 		}
 
