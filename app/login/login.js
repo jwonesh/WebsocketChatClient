@@ -34,7 +34,7 @@ angular.module('myApp.login', ['ngRoute', 'myApp', 'ngCookies'])
 	vm.events.login = function(){
 
 		var peerId = generateUUID();
-		var peer = new Peer(peerId, {host: 'localhost', port: 9000, path: '/chat'});
+		var peer = new Peer(peerId, {host: '10.10.11.83', port: 9000, path: '/chat'});
 		//TODO: Check if id is taken with peer.on('unavailable-id', ...)
 		//TODO: Check for general errors
 		peer.on('open', function(){
@@ -50,6 +50,7 @@ angular.module('myApp.login', ['ngRoute', 'myApp', 'ngCookies'])
 					//TODO: handle error
 					
 					UserService.getUserWrapper().user.peer = peer;
+					UserService.getUserWrapper().user.peerId = peerId;
 
 					//connect to peering server
 					$location.path("/main");
