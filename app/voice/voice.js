@@ -53,6 +53,13 @@ angular.module('myApp.voice', ['ngRoute'])
                     vm.errors.voiceChatRoomConnectionError = true;
                 } else{
                     //update UI
+                    //cancel current calls
+                    voiceWrapper.curVoiceRoom;
+
+                    for (var c = 0; c < voiceWrapper.calls.length; c++){
+                        voiceWrapper.calls[c].close();
+                    }
+
                     var participants = null;
                     for (var k in  vm.data.voiceWrapper.chatRooms){
                         var room = vm.data.voiceWrapper.chatRooms[k];
@@ -65,6 +72,30 @@ angular.module('myApp.voice', ['ngRoute'])
                                 }
                             }
                         } else{
+                            for (var i = 0; i < voiceWrapper.chatRooms[name.toLowerCase()].participants.length; i++){
+                                if (voiceWrapper.chatRooms[name.toLowerCase()].participants[i].peerId === UserService.getUserWrapper().user.peerId){
+                                    continue;
+                                }
+                                var conn = peer.connect(voiceWrapper.chatRooms[name.toLowerCase()].participants[i].peerId);
+                                conn.on('open', function(){
+                                  conn.send('hi!');
+                                });
+
+
+                                var rp = audioContext.createMediaStreamDestination();
+                                var mic = audioContext.createMediaStreamSource(stream);
+                                mic.connect(rp);
+                                var call = peer.call(voiceWrapper.chatRooms[name.toLowerCase()].participants[i].peerId, rp.stream);
+                                voiceWrapper.calls.push(call);
+
+                                call.on('stream', function(s) {
+                                  // `stream` is the MediaStream of the remote peer.
+                                  // Here you'd add it to an HTML video/canvas element.
+                                  var source = audioContext.createMediaStreamSource(s);
+                                  source.connect(audioContext.destination);
+                                  console.log("streaming!");
+                                });
+                            }
                             room.participants.push({username: UserService.getUserWrapper().user.username, peerId: UserService.getUserWrapper().user.peerId});
                         }
                     }
